@@ -70,6 +70,7 @@ function processImage(){
 	
 	// Oversample the image to help the detection of local maxima
 	if (isOverSampled) {
+			name = getTitle();
 			run("Scale...", "x=2 y=2 interpolation=Bilinear average create title=[Oversampled - "+name);
 	}
 
@@ -127,7 +128,6 @@ function processImage(){
 	//There should only be one
 	centerX = xpoints[0];
 	centerY = ypoints[0];
-
 
 	// From here make concentric circles
 	start    = parseFloat(getData("From radius"));
