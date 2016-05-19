@@ -51,9 +51,9 @@ function toolName() {
  * Detection settings to use for the analysis
  */
 function detectionSettings(){
-	names = newArray("Oversample Image", "Values in Microns", "From radius", "Till radius", "Increment", "Distance Allowed Variation Percent", "Dark Center", "Center Noise Tolerance", "Ask User to Draw Center", "Measure on Flattened Image", "Summary Options", "Max Allowed Delta Peak-to Peak", "Min Consecutive Good Distances", "Min Good Peaks Percent");
-	types = newArray("c", "m","n","n","n","n","c","n","c", "c", "m", "n", "n", "n");
-	defaults = newArray(false, "",20,50,1,25,true, 10, true, false, "", 0.010, 50, 50);
+	names = newArray("Oversample Image", "Values in Microns", "From radius", "Till radius", "Increment", "Line Width", "Distance Allowed Variation Percent", "Dark Center", "Center Noise Tolerance", "Ask User to Draw Center", "Measure on Flattened Image", "Summary Options", "Max Allowed Delta Peak-to Peak", "Min Consecutive Good Distances", "Min Good Peaks Percent");
+	types = newArray("c", "m","n","n","n","n", "n","c","n","c", "c", "m", "n", "n", "n");
+	defaults = newArray(false, "", 20, 50, 1, 20, 25, true, 10, true, false, "", 0.010, 50, 50);
 	promptParameters(names, types, defaults);
 	
 }
@@ -66,7 +66,7 @@ function processImage(){
 	close("\\Others");
 	roiManager("Reset");
 	isOverSampled = getBool("Oversample Image");
-	
+	lineWidth= parseInt(getData("Line Width"));
 	
 	// Oversample the image to help the detection of local maxima
 	if (isOverSampled) {
@@ -145,7 +145,7 @@ function processImage(){
 		rName = "R: "+rad;
 		Roi.setName(rName);
 		roiManager("Add");
-		measureSelection(pctRange);
+		measureSelection(pctRange, lineWidth);
 	}
 
 
@@ -266,7 +266,7 @@ function dist(x1,y1,x2,y2) {
 }
 
 
-function measureSelection(pctRange) {
+function measureSelection(pctRange, lineWidth) {
 	getVoxelSize(vx,vy,vz,u);
 	name = getTitle();
 	radiusRaw = Roi.getName;
@@ -274,7 +274,7 @@ function measureSelection(pctRange) {
 	radius = parseFloat(substring(radiusRaw, 3, lengthOf(radiusRaw)));
 
 	// Find bright peaks and dark peacks
-	findPeaks(true);
+	findPeaks(true, lineWidth);
 	distanceBright = measureDistances(pctRange, radius/vx);
 	close();
 	
@@ -473,9 +473,9 @@ function summarizeTable() {
 /*
  * Peak finder
  */
-function findPeaks(darkBackground){
+function findPeaks(darkBackground, lineWidth){
 	// Get the profile
-	run("Straighten...");
+	run("Straighten...", "line="+lineWidth);
 	if(darkBackground) {
 		rename("Bright");
 	} else {
@@ -708,11 +708,13 @@ icon=noicon
 arg=<macro>
 getVoxelSize(vx,vy,vz,u);
 pctRange = parseFloat(getData("Distance Allowed Variation Percent"))/100;
+lineWidth= parseInt(getData("Line Width"));
+
 name = getTitle();
 radRaw = Roi.getName;
 radius = parseFloat(substring(radRaw, 3, lengthOf(radRaw)));
 
-findPeaks(true);
+findPeaks(true, lineWidth);
 distanceBright = measureDistances(pctRange, radius/vx);
 	
 
