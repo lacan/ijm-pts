@@ -1,4 +1,4 @@
-# ijm-pts
+# Pizza Target Slide ImageJ / Fiji ActionBar
 ActionBar for PTS Analysis by the BioImgaing and Optics Platform (BIOP)
 
 To download, you simply need to download the 
