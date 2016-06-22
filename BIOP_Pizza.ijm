@@ -30,12 +30,12 @@
 call("BIOP_LibInstaller.installLibrary", "BIOP"+File.separator+"BIOPLib.ijm");
 
 
-//runFrom = "jar:file:BIOP/BIOP_PTS.jar!/BIOP_Pizza.ijm";
+runFrom = "jar:file:BIOP/BIOP_PTS.jar!/BIOP_Pizza.ijm";
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 // The line below is for debugging. Place this VSI file in the ActionBar folder within Plugins
 //////////////////////////////////////////////////////////////////////////////////////////////
-runFrom = "/plugins/ActionBar/BIOP_Pizza.ijm"";
+//runFrom = "/plugins/ActionBar/BIOP_Pizza.ijm"";
 
 
 run("Action Bar",runFrom);
