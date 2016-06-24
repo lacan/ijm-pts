@@ -1,7 +1,7 @@
 /*
  * BIOP PTS Measurement Tool (Pizza Target Slice)
  * By Olivier Burri, EPFL - SV - PTECH BIOP
- * Last Edit: Dec 17th 2015
+ * Last Edit: June 24 2016
  * 
  * DESCRIPTION:
  * ------------
@@ -51,9 +51,9 @@ function toolName() {
  * Detection settings to use for the analysis
  */
 function detectionSettings(){
-	names = newArray("Oversample Image", "Values in Microns", "From radius", "Till radius", "Increment", "Line Width", "Distance Allowed Variation Percent", "Dark Center", "Center Noise Tolerance", "User Draws ROI", "Fine-Tune Center", "Measure on Flattened Image", "Summary Options", "Max Allowed Delta Peak-to Peak", "Min Consecutive Good Distances", "Min Good Peaks Percent");
-	types = newArray("c", "m", "n", "n", "n", "n", "n", "c", "n", "c", "c", "c", "m", "n", "n", "n");
-	defaults = newArray(false, "", 20, 50, 1, 20, 25, false, true, 10, true, false, "", 0.010, 50, 50);
+	names = newArray("Oversample Image", "Values in Microns", "From radius", "Till radius", "Increment", "Line Width", "Distance Allowed Variation Percent", "Fine-Tune Center", "Dark Center", "Center Noise Tolerance", "User Draws ROI", "Measure on Flattened Image", "Summary Options", "Max Allowed Delta Peak-to Peak", "Min Detected Peaks", "Min Good Peaks Percent");
+	types = newArray("c", "m", "n", "n", "n", "n", "n", "c", "c", "n", "c", "c", "m", "n", "n", "n");
+	defaults = newArray(true, "", 20, 50, 0.5, 20, 25, false, true, 100, true, false, "", 0.01, 350, 95);
 	promptParameters(names, types, defaults);
 	
 }
@@ -92,7 +92,7 @@ function processImage(){
 	tolerance = 0.02 * (max-min);
 	// Make sure it makes sense (Not smaller than 2 grey levels)
 	if (tolerance < 2) tolerance = 2;
-	print("Maxima Detection Tolerance: "+tolerance);
+	setData("Maxima Detection Tolerance", tolerance);
 
 
 	// Detect center of pattern
@@ -157,7 +157,7 @@ function processImage(){
 		selectImage(name);
 		rad = ((i)*step+start );
 		//makeCircleLine(centerX, centerY, diam/vx);
-		print("Circle", centerX, centerY, rad/vx);
+		//print("Circle", centerX, centerY, rad/vx);
 		cleanCircle(centerX, centerY, rad/vx);
 		rName = "R: "+rad;
 		Roi.setName(rName);
@@ -230,7 +230,9 @@ function findCenter() {
  */
 function measureDistances(goodBadRangePct, circleRad) {
 	run("Remove Overlay");
+	
 	getSelectionCoordinates(peakPosx, peakPosy);
+	//waitForUser;
 	profile = getProfile();
 	
 	//Get dimensions of image to overlay good and bad peaks
@@ -379,9 +381,6 @@ function measureSelection(original_name, pctRange, lineWidth, tolerance) {
 	setResult("Circle Radius ["+u+"]", n, radius);
 
 
-	maxGoodDelta = 0.01;
-	maxGoodSd = 0.01;
-	//quality = maxGoodDelta / pow(res[0]*vx,2)+maxGoodDelta) * maxGoodSd /(pow(res[1],2)+maxGoodSd) * ;
 	ep = radius*sin(2*PI/360);
 	setResult("Label", n, name);
 	setResult("Oversampled", n, isOversampled);
@@ -419,12 +418,12 @@ function measureSelection(original_name, pctRange, lineWidth, tolerance) {
  */
 function summarizeTable() {
 	maxP2PDelta = parseFloat(getData("Max Allowed Delta Peak-to Peak"));
-	minGoodCnt  = parseInt(getData("Min Consecutive Good Distances"));
+	minCnt  = parseInt(getData("Min Detected Peaks"));
 	minDistPct  = parseFloat(getData("Min Good Peaks Percent"));
 	// Check result table exists
 	winds = getList("window.titles");
 	for (i=0; i<winds.length; i++) {
-		if (winds[i] == "Pattern Detector Detailed Results") {
+		if (matches(winds[i],"Pattern Detector Detailed Results.*")) {
 			prepareTable("Pattern Detector Detailed Results");
 		} // Otherwise assume that it's the current result table.
 	}
@@ -508,7 +507,7 @@ function summarizeTable() {
 			for(k=0; k<radiusA.length; k++) {
 				//print(abs(epA[k] - p2pAvgA[k]), maxGoodCntA[k], goodDPct);
 				
-				if(abs(epA[k] - p2pAvgA[k]) < maxP2PDelta && maxGoodCntA[k] > minGoodCnt && goodDPctA[k] > minDistPct) {
+				if(abs(epA[k] - p2pAvgA[k]) < maxP2PDelta && maxGoodCntA[k] > minCnt && goodDPctA[k] > minDistPct) {
 					
 					SNameA	    = Array.concat(SNameA, lastName);
 					SOversampledA = Array.concat(SOversampledA, lastOversampled);
@@ -582,7 +581,7 @@ function summarizeTable() {
 	
 	//Last Result
 	for(k=0; k<radiusA.length; k++) {
-		if(abs(epA[k] - p2pAvgA[k]) < maxP2PDelta && maxGoodCntA[k] > minGoodCnt && goodDPctA[k] > minDistPct) {
+		if(abs(epA[k] - p2pAvgA[k]) < maxP2PDelta && totPeakA[k] > minCnt && goodDPctA[k] > minDistPct) {
 			SOversampledA = Array.concat(SOversampledA, lastOversampled);
 			SNameA		= Array.concat(SNameA, lastName);
 			SradiusA	= Array.concat(SradiusA, radiusA[k]);
@@ -667,7 +666,6 @@ function findPeaks(darkBackground, lineWidth, tolerance){
 	makeLine(0,y/2,x,y/2);
 	profile = getProfile();
 
-
 	
 	x1 = 0;
 	y1 = y/2;
@@ -746,7 +744,6 @@ function findPeaks(darkBackground, lineWidth, tolerance){
 
 	
 	makeSelection("polyline", peakPosx, peakPosy);
-	
 }
 
 /* 
@@ -788,7 +785,7 @@ function drawAnalysisRegion(showConfirm) {
 	// Radii Start and End
 	r1 = parseFloat(getData("From radius"))/vx;
 	r2 = parseFloat(getData("Till radius"))/vx;
-	print(r1);
+	//print(r1);
 	// Be smart estimating the initial radius, min peak 2 peak 
 	// p2p = radius1*sin(2*PI/360)
 	// radius = p2p / sin(2*PI/360)
@@ -1056,24 +1053,19 @@ label= Check Peaks Current ROI
 icon=noicon
 arg=<macro>
 getVoxelSize(vx,vy,vz,u);
-pctRange = parseFloat(getData("Distance Allowed Variation Percent"))/100;
-lineWidth= parseInt(getData("Line Width"));
-
-// Measure tolerance percentage to use, it should be 2% of the max-min intensity, as estimated manually
-getStatistics(area, mean, min, max, std);
-tolerance = 0.02 * max-min;
-// Make sure it makes sense (Not smaller than 2 grey levels)
-if (tolerance < 2) tolerance = 2;
-	
-
 name = getTitle();
-radRaw = Roi.getName;
-radius = parseFloat(substring(radRaw, 3, lengthOf(radRaw)));
+tolerance = parseFloat(getDataD("Maxima Detection Tolerance",4));
+lineWidth = parseInt(getData("Line Width"));
+pctRange = parseFloat(getData("Distance Allowed Variation Percent"))/100;
+radiusRaw = Roi.getName;
+radius = parseFloat(substring(radiusRaw, 3, lengthOf(radiusRaw)));
 
-findPeaks(true, lineWidth);
+// Find bright peaks and dark peacks
+findPeaks(true, lineWidth, tolerance);
 distanceBright = measureDistances(pctRange, radius/vx);
-	
-
+selectImage(name);
+findPeaks(false, lineWidth, tolerance);
+distanceDark = measureDistances(pctRange, radius/vx);
 </macro>
 </line>
 

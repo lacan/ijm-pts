@@ -1,0 +1,16 @@
+This window contains data BIOP Pizza Target Detection Settings needs.
+Please do not close it.
+Oversample Image : Yes
+From radius : 20
+Till radius : 50
+Increment : 0.5
+Line Width : 20
+Distance Allowed Variation Percent : 25
+Fine-Tune Center : No
+Dark Center : Yes
+Center Noise Tolerance : 100
+User Draws ROI : Yes
+Measure on Flattened Image : No
+Max Allowed Delta Peak-to Peak : 0.01
+Min Detected Peaks : 350
+Min Good Peaks Percent : 95
